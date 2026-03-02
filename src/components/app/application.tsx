@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Map, View } from "ol";
+import { type Feature, Map, MapBrowserEvent, View } from "ol";
 import TileLayer from "ol/layer/Tile.js";
 import { OSM, WMTS } from "ol/source.js";
 import { useGeographic } from "ol/proj.js";
@@ -10,7 +10,7 @@ import { Layer } from "ol/layer.js";
 import VectorLayer from "ol/layer/Vector.js";
 import { optionsFromCapabilities } from "ol/source/WMTS.js";
 import { WMTSCapabilities } from "ol/format.js";
-import { skoleLayer } from "../layers/skoleLayer.js";
+import { activeSkoleStyle, skoleLayer } from "../layers/skoleLayer.js";
 
 useGeographic();
 
@@ -47,11 +47,23 @@ export function Application() {
 
   useEffect(() => map.setLayers(layers), [layers]);
 
+  const [activeFeature, setActiveFeature] = useState<Feature | undefined>();
+  useEffect(() => {
+    activeFeature?.setStyle(activeSkoleStyle);
+    return () => {
+      activeFeature?.setStyle(undefined);
+    };
+  }, [activeFeature]);
+
   useEffect(() => {
     map.setTarget(mapRef.current!);
     navigator.geolocation.getCurrentPosition((pos) => {
       const { latitude, longitude } = pos.coords;
       view.animate({ center: [longitude, latitude], zoom: 15 });
+    });
+    map.on("pointermove", (e: MapBrowserEvent) => {
+      const features = map.getFeaturesAtPixel(e.pixel);
+      setActiveFeature(features[0] as Feature);
     });
     map.setLayers(layers);
   }, []);
