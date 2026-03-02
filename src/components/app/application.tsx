@@ -1,13 +1,16 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Map, View } from "ol";
 import TileLayer from "ol/layer/Tile.js";
-import { OSM } from "ol/source.js";
+import { OSM, WMTS } from "ol/source.js";
 import { useGeographic } from "ol/proj.js";
 
 // @ts-ignore
 import "ol/ol.css";
 import { Layer } from "ol/layer.js";
 import VectorLayer from "ol/layer/Vector.js";
+import { optionsFromCapabilities } from "ol/source/WMTS.js";
+import { WMTSCapabilities } from "ol/format.js";
+import { skoleLayer } from "../layers/skoleLayer.js";
 
 useGeographic();
 
@@ -19,13 +22,28 @@ const map = new Map({
 const osmLayer = new TileLayer({ source: new OSM() });
 
 const kartverketLayer = new TileLayer();
+fetch("https://cache.kartverket.no/v1/wmts/1.0.0/WMTSCapabilities.xml").then(
+  async (res) => {
+    const parser = new WMTSCapabilities();
+    const capabilities = parser.read(await res.text());
+    kartverketLayer.setSource(
+      new WMTS(
+        optionsFromCapabilities(capabilities, {
+          layer: "topo",
+          matrixSet: "webmercator",
+        })!,
+      ),
+    );
+  },
+);
+
+// fikk ikk eksportert filen :(
 const bydelLayer = new VectorLayer();
-const skoleLayer = new VectorLayer();
 
 export function Application() {
   const mapRef = useRef<HTMLDivElement | null>(null);
 
-  const [layers, setLayers] = useState<Layer[]>([osmLayer]);
+  const [layers, setLayers] = useState<Layer[]>([kartverketLayer, skoleLayer]);
 
   useEffect(() => map.setLayers(layers), [layers]);
 
