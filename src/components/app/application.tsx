@@ -22,7 +22,7 @@ export function Application() {
     map.setTarget(mapRef.current!);
     navigator.geolocation.getCurrentPosition((pos) => {
       const { latitude, longitude } = pos.coords;
-      view.animate({ center: [longitude, latitude] });
+      view.animate({ center: [longitude, latitude], zoom: 15 });
     });
   }, []);
 
